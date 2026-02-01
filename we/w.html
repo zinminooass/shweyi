@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snack Corner</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Roboto+Mono&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Roboto Mono', monospace;background:linear-gradient(135deg,#e8f5e9,#ffffff);color:#1e1e1e;min-height:100vh;}
+.container{max-width:1200px;margin:auto;padding:1rem;}
+#menu,#cart,#admin{display:none;}
+.title{font-family:'Pacifico',cursive;font-size:3rem;color:#2e7d32;text-align:center;margin-bottom:1rem;}
+button{cursor:pointer;transition:0.3s;}
+button:active{transform:scale(0.95);}
+.btn{padding:.6rem 1.2rem;border:none;border-radius:12px;font-weight:600;}
+.primary{background:#2e7d32;color:#fff;}
+.danger{background:#e53935;color:#fff;}
+.top-icons{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.top-left-icons{display:flex;gap:0.8rem;align-items:center;}
+.contact-icon{font-size:1.5rem;color:#fff;background:#2e7d32;border-radius:50%;width:50px;height:50px;display:flex;justify-content:center;align-items:center;box-shadow:0 4px 8px rgba(0,0,0,0.1);transition:0.25s;text-decoration:none;}
+.contact-icon:hover{transform:scale(1.1);background:#1b5e20;}
+.top-right-icons{display:flex;gap:0.8rem;}
+.cart-icon{font-size:1.5rem;color:#fff;background:#2e7d32;border-radius:50%;width:50px;height:50px;display:flex;justify-content:center;align-items:center;box-shadow:0 4px 8px rgba(0,0,0,0.1);transition:0.25s;}
+.cart-icon:hover{transform:scale(1.1);background:#1b5e20;}
+.cart-count{position:absolute;top:-6px;right:-10px;background:#e53935;color:#fff;font-size:12px;padding:2px 6px;border-radius:50%;}
+.food-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;}
+.food-card{background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.1);display:flex;flex-direction:column;text-align:center;}
+.food-card img{width:100%;height:180px;object-fit:cover;background:#f0f0f0;}
+.food-info{padding:1rem;display:flex;flex-direction:column;gap:.5rem;align-items:center;}
+.price{color:#2e7d32;font-weight:700;font-size:1.2rem;}
+.in{color:#2e7d32;font-weight:600;}
+.out{color:#c62828;font-weight:600;}
+input{width:100%;padding:.7rem;margin:.3rem 0;border-radius:10px;border:1px solid #ddd;font-family:'Roboto Mono', monospace;}
+#adminContent{margin-top:1.5rem;border-top:2px solid #eee;padding-top:1rem;max-height:70vh;overflow-y:auto;}
+.stock-btn{width:100%;padding:.5rem;border:none;border-radius:10px;color:#fff;font-weight:600;margin-top:4px;}
+.stock-btn.in{background:#2e7d32;}
+.stock-btn.out{background:#c62828;}
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:.8rem;border-bottom:1px solid #eee;}
+.running-text{background:#e8f5e9;color:#2e7d32;padding:.5rem;margin-bottom:1rem;overflow:hidden;white-space:nowrap;font-family:'Caveat',cursive;font-size:1.2rem;}
+.running-text span{display:inline-block;padding-left:100%;animation:scrollText 15s linear infinite;}
+@keyframes scrollText{0%{transform:translateX(0%);}100%{transform:translateX(-100%);}}
+@media(max-width:768px){.title{font-size:2.2rem;}.contact-icon,.cart-icon{width:45px;height:45px;font-size:1.3rem;}}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Welcome -->
+    <div id="welcome" style="display:block;text-align:center;margin-top:20vh;">
+        <div class="title">Welcome to Snack Corner</div>
+        <p style="margin-bottom:2rem;">Your favorite snacks delivered!</p>
+        <button class="btn primary" onclick="show('menu')">Explore Menu</button>
+    </div>
+
+    <!-- Menu -->
+    <div id="menu">
+        <div class="top-icons">
+            <div class="top-left-icons">
+                <span class="title" style="margin-right:1rem;">Our Items</span>
+                <a href="tel:09779525371" class="contact-icon" title="Call / KPay"><i class="fas fa-phone"></i></a>
+                <a href="https://t.me/shweyi" target="_blank" class="contact-icon" title="Message on Telegram"><i class="fab fa-telegram-plane"></i></a>
+            </div>
+            <div class="top-right-icons">
+                <div style="position:relative;">
+                    <i class="fas fa-shopping-cart cart-icon" onclick="show('cart')"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </div>
+                <i class="fas fa-user-cog cart-icon" onclick="show('admin')"></i>
+            </div>
+        </div>
+        <div id="runningText" class="running-text" style="display:none"><span id="runningTextContent"></span></div>
+        <div class="food-grid" id="foodList">Loading items...</div>
+    </div>
+
+    <!-- Cart -->
+    <div id="cart">
+        <div class="top-icons"><i class="fas fa-arrow-left cart-icon" onclick="show('menu')"></i></div>
+        <h3>Your Order</h3>
+        <div id="cartItems"></div>
+        <h4 style="margin:1rem 0;">Total: $<span id="totalPrice">0.00</span></h4>
+        <input id="name" placeholder="Your Name">
+        <input id="hostel" placeholder="Hostel/Room">
+        <input id="phone" placeholder="Phone Number">
+        <button class="btn primary" style="width:100%;margin-top:1rem;" onclick="placeOrder()">Place Order</button>
+    </div>
+
+    <!-- Admin -->
+    <div id="admin">
+        <div class="top-icons"><i class="fas fa-arrow-left cart-icon" onclick="show('menu')"></i></div>
+        <h3>Admin Panel</h3>
+        <div id="loginArea">
+            <input id="adminPass" type="password" placeholder="Enter Admin Password">
+            <button class="btn primary" onclick="login()">Login</button>
+        </div>
+        <div id="adminContent" style="display:none">
+            <!-- Add Food -->
+            <h4>Add New Product</h4>
+            <input id="newName" placeholder="Product Name">
+            <input id="newPrice" type="number" placeholder="Price">
+            <input id="newImg" type="file" accept="image/*">
+            <button class="btn primary" onclick="addFood()" id="addBtn">Upload & Add Product</button>
+
+            <!-- Manage Inventory -->
+            <h4 style="margin-top:2rem">Manage Inventory</h4>
+            <div class="food-grid" id="adminFood"></div>
+
+            <!-- Running Text -->
+            <h4 style="margin-top:2rem">Running Text</h4>
+            <input id="newText" placeholder="Add running text">
+            <button class="btn primary" onclick="addRunningText()">Add</button>
+            <div id="runningTextAdmin"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAcC--9gqyvSKgNJgXn8PxhUZkNANkgEFY",
+  authDomain: "shwe-yi-win23.firebaseapp.com",
+  projectId: "shwe-yi-win23",
+  storageBucket: "shwe-yi-win23.firebasestorage.app",
+  appId: "1:358130981782:web:6afb45eb96eb41bb7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const foodCol = collection(db,'foods');
+const runningTextCol = collection(db,'runningText');
+
+const ADMIN_PASSWORD = "admin123";
+const IMGBB_API_KEY = "7ecf9bb152629974bc5018633b8de663";
+const TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN";
+const TELEGRAM_CHAT_ID = "YOUR_CHAT_ID";
+
+let cart=[];
+
+// Navigation
+window.show=(id)=>{document.querySelectorAll('#welcome,#menu,#cart,#admin').forEach(el=>el.style.display='none');document.getElementById(id).style.display='block'; if(id==='menu') renderMenu();};
+
+// Menu
+function renderMenu(){
+    const container=document.getElementById('foodList'); container.innerHTML='Loading items...';
+    onSnapshot(foodCol, snap=>{
+        container.innerHTML='';
+        let inStock=[], outStock=[];
+        snap.forEach(d=>{const f=d.data(); f.id=d.id; if(f.inStock) inStock.push(f); else outStock.push(f);});
+        const items=[...inStock,...outStock];
+        items.forEach(f=>{
+            const card=document.createElement('div');
+            card.className='food-card';
+            card.innerHTML=`<img src="${f.img||'https://via.placeholder.com/300x180'}"><div class="food-info"><b>${f.name}</b><div class="price">$${Number(f.price).toFixed(2)}</div><div class="${f.inStock?'in':'out'}">${f.inStock?'In Stock':'Out of Stock'}</div>${f.inStock?`<button class="btn primary" onclick="addToCart('${f.id}','${f.name}',${f.price})">Add to Cart</button>`:''}</div>`;
+            container.appendChild(card);
+        });
+    });
+
+    // Running Text
+    const menuText=document.getElementById('runningTextContent');
+    onSnapshot(runningTextCol,snap=>{
+        let txt=''; snap.forEach(d=>{txt+=d.data().text+' • ';});
+        menuText.innerHTML=txt; document.getElementById('runningText').style.display=txt? 'block':'none';
+    });
+}
+
+// Cart
+window.addToCart=(id,name,price)=>{cart.push({id,name,price}); updateCartUI();};
+function updateCartUI(){const list=document.getElementById('cartItems'); let total=0; list.innerHTML=''; cart.forEach((item,idx)=>{total+=Number(item.price); list.innerHTML+=`<div class="cart-item"><span>${item.name} - $${item.price}</span><button class="btn danger" onclick="removeFromCart(${idx})" style="padding:2px 8px;">X</button></div>`;}); document.getElementById('totalPrice').textContent=total.toFixed(2); document.getElementById('cartCount').textContent=cart.length;}
+window.removeFromCart=(idx)=>{cart.splice(idx,1); updateCartUI();};
+
+// Admin
+window.login=()=>{const pass=document.getElementById('adminPass').value; if(pass===ADMIN_PASSWORD){document.getElementById('loginArea').style.display='none'; document.getElementById('adminContent').style.display='block'; renderAdmin(); renderRunningText();} else alert("Incorrect Password");};
+
+async function uploadToImgBB(file){const form=new FormData(); form.append('image',file); const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:'POST',body:form}); const data=await res.json(); if(data.success) return data.data.url; throw new Error("Upload failed");}
+
+window.addFood=async ()=>{const name=document.getElementById('newName').value; const price=document.getElementById('newPrice').value; const file=document.getElementById('newImg').files[0]; if(!name||!price) return alert("Name and Price required"); try{let imgUrl=''; if(file) imgUrl=await uploadToImgBB(file); await addDoc(foodCol,{name,price:Number(price),img:imgUrl,inStock:true,createdAt:serverTimestamp()}); document.getElementById('newName').value=''; document.getElementById('newPrice').value=''; document.getElementById('newImg').value=''; alert("Added successfully!");} catch(e){alert("Error adding item");}};
+
+function renderAdmin(){const container=document.getElementById('adminFood'); onSnapshot(foodCol,snap=>{container.innerHTML=''; let inStock=[], outStock=[]; snap.forEach(d=>{const f=d.data(); f.id=d.id; if(f.inStock) inStock.push(f); else outStock.push(f);}); const items=[...inStock,...outStock]; items.forEach(f=>{const card=document.createElement('div'); card.className='food-card'; card.innerHTML=`<img src="${f.img||'https://via.placeholder.com/300x180'}"><div class="food-info"><input id="n-${f.id}" value="${f.name}"><input id="p-${f.id}" type="number" value="${f.price}"><label style="font-size:12px;">Change Photo:</label><input type="file" id="file-${f.id}" accept="image/*"><button class="stock-btn ${f.inStock?'in':'out'}" onclick="toggleStock('${f.id}',${f.inStock})">${f.inStock?'Mark Out of Stock':'Mark In Stock'}</button><button class="btn primary" onclick="saveItem('${f.id}')">Save Changes</button></div>`; container.appendChild(card);});});}
+
+window.saveItem=async (id)=>{const name=document.getElementById(`n-${id}`).value; const price=document.getElementById(`p-${id}`).value; const file=document.getElementById(`file-${id}`).files[0]; try{let updateData={name,price:Number(price)}; if(file) updateData.img=await uploadToImgBB(file); await updateDoc(doc(db,'foods',id),updateData); alert("Updated!");} catch(e){alert("Update failed");}};
+window.toggleStock=async (id,currentStatus)=>{await updateDoc(doc(db,'foods',id),{inStock:!currentStatus});}
+
+// Running text
+window.addRunningText=async ()=>{const txt=document.getElementById('newText').value.trim(); if(!txt) return alert("Enter text"); await addDoc(runningTextCol,{text:txt,createdAt:serverTimestamp()}); document.getElementById('newText').value=''; renderRunningText();}
+function renderRunningText(){const container=document.getElementById('runningTextAdmin'); onSnapshot(runningTextCol,snap=>{container.innerHTML=''; snap.forEach(d=>{const t=d.data(); const id=d.id; const div=document.createElement('div'); div.style.display='flex'; div.style.alignItems='center'; div.style.margin='3px 0'; div.innerHTML=`<span style="flex:1">${t.text}</span> <button class="btn danger" onclick="deleteRunningText('${id}')">X</button>`; container.appendChild(div);});});}
+window.deleteRunningText=async (id)=>{await deleteDoc(doc(db,'runningText',id)); renderRunningText();}
+
+// Place order + Telegram
+window.placeOrder=async ()=>{const name=document.getElementById('name').value; const hostel=document.getElementById('hostel').value; const phone=document.getElementById('phone').value; if(cart.length===0||!name||!phone) return alert("Enter name, phone and add items"); let items=cart.map(i=>`- ${i.name} ($${i.price})`).join('\n'); let total=cart.reduce((a,b)=>a+b.price,0); let text=`📦 New Order\nName: ${name}\nHostel: ${hostel}\nPhone: ${phone}\nItems:\n${items}\nTotal: $${total}`; try{ await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:TELEGRAM_CHAT_ID,text:text})}); alert("Order sent!"); cart=[]; updateCartUI(); show('menu');} catch(e){alert("Telegram error. Check token/ID.");}};
+</script>
+</body>
+</html>

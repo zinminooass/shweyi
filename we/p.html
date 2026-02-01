@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>အဝင်း ကုန်စုံဆိုင်</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Poppins;background:linear-gradient(135deg,#e8f5e9,#ffffff);color:#1e1e1e;min-height:100vh;}
+    .container{max-width:1200px;margin:auto;padding:1rem;}
+    #welcome,#menu,#cart,#admin{display:none;}
+    .title{font-family:Caveat,cursive;font-size:3rem;color:#2e7d32;text-align:center;margin-bottom:1rem;}
+    button{cursor:pointer; transition: 0.3s;}
+    button:active{transform: scale(0.95);}
+    .btn{padding:.6rem 1.2rem;border:none;border-radius:12px;font-weight:600;}
+    .primary{background:#2e7d32;color:#fff;}
+    .danger{background:#e53935;color:#fff;}
+    .top-icons {
+       display: flex;
+       justify-content: flex-end; /* pushes icons to the right */
+       align-items: center;       /* vertically centers them */
+       gap: 1.5rem;               /* space between the two icons */
+       position: absolute;        /* float them over the section */
+       top: 1rem;                 /* distance from top of section */
+       right: 8rem;               /* distance from right edge */
+    }
+    
+  
+    .top-icons i{font-size:1.5rem;cursor:pointer;position:relative;color:#2e7d32;}
+    .cart-count{position:absolute;top:-6px;right:-10px;background:#e53935;color:#fff;font-size:12px;padding:2px 6px;border-radius:50%;}
+    .food-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;}
+    .food-card{background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.1);display:flex;flex-direction:column;}
+    .food-card img{width:100%;height:180px;object-fit:cover;background:#f0f0f0;}
+    .food-info{padding:1rem;display:flex;flex-direction:column;gap:.5rem;}
+    .price{color:#2e7d32;font-weight:700;font-size:1.2rem;}
+    .in{color:#2e7d32;font-weight:600;}
+    .out{color:#c62828;font-weight:600;}
+    input{width:100%;padding:.7rem;margin:.3rem 0;border-radius:10px;border:1px solid #ddd;}
+    #adminContent{margin-top:1.5rem;border-top:2px solid #eee;padding-top:1rem;}
+    .stock-btn{width:100%;padding:.5rem;border:none;border-radius:10px;color:#fff;font-weight:600;margin-top:4px;}
+    .stock-btn.in{background:#2e7d32;}
+    .stock-btn.out{background:#c62828;}
+    .cart-item{display:flex;justify-content:space-between;align-items:center;padding:.8rem;border-bottom:1px solid #eee;}
+    @media(max-width:768px){.title{font-size:2.2rem;}}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div id="welcome" style="display: block; text-align: center; margin-top: 20vh;">
+        <div class="title">အဝင်း ကုန်စုံဆိုင်</div>
+        <p style="margin-bottom: 2rem;">Welcome to our grocery store!</p>
+        <button class="btn primary" onclick="show('menu')">Explore Menu</button>
+    </div>
+
+    <div id="menu">
+        <div class="title">Our Items</div>
+        <div class="top-icons">
+            <i class="fas fa-shopping-cart" onclick="show('cart')">
+                <span class="cart-count" id="cartCount">0</span>
+            </i>
+            <i class="fas fa-user-cog" onclick="show('admin')"></i>
+        </div>
+        <div class="food-grid" id="foodList">Loading items...</div>
+    </div>
+    
+
+    <div id="cart">
+        <div class="top-icons">
+            <i class="fas fa-arrow-left" onclick="show('menu')"></i>
+        </div>
+        <h3>Your Order</h3>
+        <div id="cartItems"></div>
+        <h4 style="margin: 1rem 0;">Total: $<span id="totalPrice">0.00</span></h4>
+        <input id="name" placeholder="Your Name">
+        <input id="hostel" placeholder="Hostel/Room">
+        <input id="phone" placeholder="Phone Number">
+        <button class="btn primary" style="width:100%; margin-top:1rem;" onclick="placeOrder()">Place Order</button>
+    </div>
+
+    <div id="admin">
+        <div class="top-icons">
+            <i class="fas fa-arrow-left" onclick="show('menu')"></i>
+        </div>
+        <h3>Admin Access</h3>
+        <div id="loginArea">
+            <input id="adminPass" type="password" placeholder="Enter Admin Password">
+            <button class="btn primary" onclick="login()">Login</button>
+        </div>
+        
+        <div id="adminContent" style="display:none">
+            <h4>Add New Product</h4>
+            <input id="newName" placeholder="Product Name">
+            <input id="newPrice" type="number" placeholder="Price">
+            <input id="newImg" type="file" accept="image/*">
+            <button class="btn primary" onclick="addFood()" id="addBtn">Upload & Add Product</button>
+
+            <h4 style="margin-top:2rem">Manage Inventory</h4>
+            <div class="food-grid" id="adminFood"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAcC--9gqyvSKgNJgXn8PxhUZkNANkgEFY",
+  authDomain: "shwe-yi-win23.firebaseapp.com",
+  projectId: "shwe-yi-win23",
+  storageBucket: "shwe-yi-win23.firebasestorage.app",
+  appId: "1:358130981782:web:6afb45eb96eb11efd41bb7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const foodCol = collection(db, 'foods');
+
+const ADMIN_PASSWORD = "admin123";
+const IMGBB_API_KEY = "7ecf9bb152629974bc5018633b8de663";
+const TELEGRAM_BOT_TOKEN = "8389705810:AAElD5Qg2H7yJ9s3lxbH6Gnex1y-zG9koqw"; // Add your token
+const TELEGRAM_CHAT_ID = "2044321494"; // Add your ID
+
+let cart = [];
+let adminListener = null;
+
+// --- Navigation ---
+window.show = (id) => {
+    document.querySelectorAll('#welcome,#menu,#cart,#admin').forEach(el => el.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+    if(id === 'menu') renderMenu();
+};
+
+// --- Menu Logic ---
+function renderMenu() {
+    const container = document.getElementById('foodList');
+    const q = query(foodCol, orderBy('createdAt', 'desc'));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = '';
+        snap.forEach(d => {
+            const f = d.data();
+            const card = document.createElement('div');
+            card.className = 'food-card';
+            card.innerHTML = `
+                <img src="${f.img || 'https://via.placeholder.com/300x180'}" alt="${f.name}">
+                <div class="food-info">
+                    <b>${f.name}</b>
+                    <div class="price">$${Number(f.price).toFixed(2)}</div>
+                    <div class="${f.inStock ? 'in' : 'out'}">${f.inStock ? 'In Stock' : 'Out of Stock'}</div>
+                    ${f.inStock ? `<button class="btn primary" onclick="addToCart('${d.id}', '${f.name}', ${f.price})">Add to Cart</button>` : ''}
+                </div>`;
+            container.appendChild(card);
+        });
+    });
+}
+
+window.addToCart = (id, name, price) => {
+    cart.push({id, name, price});
+    updateCartUI();
+};
+
+function updateCartUI() {
+    document.getElementById('cartCount').textContent = cart.length;
+    const list = document.getElementById('cartItems');
+    let total = 0;
+    list.innerHTML = '';
+    cart.forEach((item, idx) => {
+        total += Number(item.price);
+        list.innerHTML += `
+            <div class="cart-item">
+                <span>${item.name} - $${item.price}</span>
+                <button class="btn danger" onclick="removeFromCart(${idx})" style="padding: 2px 8px;">X</button>
+            </div>`;
+    });
+    document.getElementById('totalPrice').textContent = total.toFixed(2);
+}
+
+window.removeFromCart = (idx) => {
+    cart.splice(idx, 1);
+    updateCartUI();
+};
+
+// --- Admin Logic ---
+window.login = () => {
+    const pass = document.getElementById('adminPass').value;
+    if(pass === ADMIN_PASSWORD) {
+        document.getElementById('loginArea').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        renderAdmin();
+    } else {
+        alert("Incorrect Password");
+    }
+};
+
+function renderAdmin() {
+    const container = document.getElementById('adminFood');
+    if(adminListener) adminListener(); // Clear previous listener
+
+    adminListener = onSnapshot(foodCol, (snap) => {
+        container.innerHTML = '';
+        snap.forEach(d => {
+            const f = d.data();
+            const id = d.id;
+            const card = document.createElement('div');
+            card.className = 'food-card';
+            card.innerHTML = `
+                <img src="${f.img || 'https://via.placeholder.com/300x180'}" id="img-${id}">
+                <div class="food-info">
+                    <input id="n-${id}" value="${f.name}">
+                    <input id="p-${id}" type="number" value="${f.price}">
+                    <label style="font-size:12px;">Change Photo:</label>
+                    <input type="file" id="file-${id}" accept="image/*">
+                    <button class="stock-btn ${f.inStock?'in':'out'}" onclick="toggleStock('${id}',${f.inStock})">
+                        ${f.inStock?'Mark Out of Stock':'Mark In Stock'}
+                    </button>
+                    <button class="btn primary" onclick="saveItem('${id}')">Save Changes</button>
+                </div>`;
+            container.appendChild(card);
+        });
+    });
+}
+
+async function uploadToImgBB(file) {
+    const form = new FormData();
+    form.append('image', file);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {method:'POST', body:form});
+    const data = await res.json();
+    if(data.success) return data.data.url;
+    throw new Error("Upload failed");
+}
+
+window.addFood = async () => {
+    const btn = document.getElementById('addBtn');
+    const name = document.getElementById('newName').value;
+    const price = document.getElementById('newPrice').value;
+    const file = document.getElementById('newImg').files[0];
+
+    if(!name || !price) return alert("Name and Price required");
+    
+    btn.disabled = true;
+    btn.textContent = "Uploading...";
+
+    try {
+        let imgUrl = "";
+        if(file) imgUrl = await uploadToImgBB(file);
+        
+        await addDoc(foodCol, {
+            name,
+            price: Number(price),
+            img: imgUrl,
+            inStock: true,
+            createdAt: serverTimestamp()
+        });
+        
+        document.getElementById('newName').value = "";
+        document.getElementById('newPrice').value = "";
+        document.getElementById('newImg').value = "";
+        alert("Added successfully!");
+    } catch (e) {
+        alert("Error adding item");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Upload & Add Product";
+    }
+};
+
+window.saveItem = async (id) => {
+    const name = document.getElementById(`n-${id}`).value;
+    const price = document.getElementById(`p-${id}`).value;
+    const file = document.getElementById(`file-${id}`).files[0];
+    
+    try {
+        let updateData = { name, price: Number(price) };
+        if(file) {
+            alert("Uploading new image...");
+            updateData.img = await uploadToImgBB(file);
+        }
+        await updateDoc(doc(db, 'foods', id), updateData);
+        alert("Updated!");
+    } catch (e) {
+        alert("Update failed");
+    }
+};
+
+window.toggleStock = async (id, currentStatus) => {
+    await updateDoc(doc(db, 'foods', id), { inStock: !currentStatus });
+};
+
+window.placeOrder = async () => {
+    const name = document.getElementById('name').value;
+    if(cart.length === 0 || !name) return alert("Add items and enter your name");
+    
+    const items = cart.map(i => `- ${i.name} ($${i.price})`).join('\n');
+    const total = cart.reduce((a, b) => a + b.price, 0);
+    const text = `📦 New Order\nName: ${name}\nItems:\n${items}\nTotal: $${total}`;
+
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text })
+        });
+        alert("Order Sent!");
+        cart = [];
+        updateCartUI();
+        show('menu');
+    } catch (e) {
+        alert("Telegram Error. Check your Token/ID.");
+    }
+};
+
+</script>
+</body>
+</html>
